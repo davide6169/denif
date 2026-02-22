@@ -1,0 +1,71 @@
+---
+const currentYear = new Date().getFullYear();
+---
+
+<footer class="border-t border-neutral-200 bg-neutral-50">
+	<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+		<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+			<!-- Brand -->
+			<div class="space-y-4">
+				<h3 class="text-xl font-semibold" style="font-family: var(--font-display)">DENIF</h3>
+				<p class="text-sm text-neutral-600">
+					My Hands. Your steps.<br />
+					Scarpe fatte a mano con passione.
+				</p>
+			</div>
+
+			<!-- Quick Links -->
+			<div class="space-y-4">
+				<h4 class="text-sm font-semibold text-neutral-900">Esplora</h4>
+				<ul class="space-y-2">
+					<li>
+						<a href="/catalogo" class="text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
+							Catalogo
+						</a>
+					</li>
+					<li>
+						<a href="/chi-sono" class="text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
+							Chi Sono
+						</a>
+					</li>
+					<li>
+						<a href="/ordini" class="text-sm text-neutral-600 hover:text-neutral-900 transition-colors">
+							I Miei Ordini
+						</a>
+					</li>
+				</ul>
+			</div>
+
+			<!-- Contact -->
+			<div class="space-y-4">
+				<h4 class="text-sm font-semibold text-neutral-900">Contatti</h4>
+				<ul class="space-y-2">
+					<li>
+						<a
+							href="https://wa.me/39XXXXXXXXXX"
+							target="_blank"
+							rel="noopener noreferrer"
+							class="text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+						>
+							WhatsApp
+						</a>
+					</li>
+					<li>
+						<a
+							href="mailto:info@denif.it"
+							class="text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+						>
+							info@denif.it
+						</a>
+					</li>
+				</ul>
+			</div>
+		</div>
+
+		<div class="mt-8 pt-8 border-t border-neutral-200">
+			<p class="text-center text-sm text-neutral-500">
+				&copy; {currentYear} Denif. Tutti i diritti riservati.
+			</p>
+		</div>
+	</div>
+</footer>

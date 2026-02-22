@@ -1,0 +1,183 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ProductCard from '../components/ProductCard.astro';
+import { fetchProducts, filterInStock } from '../lib/airtable';
+
+const products = await fetchProducts();
+const featuredProducts = filterInStock(products).slice(0, 3);
+---
+
+<Layout title="Denif - Scarpe Artiginali">
+	<!-- Hero Section -->
+	<section class="relative bg-neutral-900 text-white">
+		<div class="absolute inset-0 bg-gradient-to-br from-neutral-900 to-neutral-800"></div>
+		<div class="absolute inset-0 opacity-20">
+			<img
+				src="https://images.unsplash.com/photo-1549298916-b41d501d3772?w=1920&q=80"
+				alt=""
+				class="w-full h-full object-cover"
+			/>
+		</div>
+
+		<div class="relative container mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
+			<div class="max-w-3xl space-y-6 animate-fade-in">
+				<p class="text-neutral-400 text-sm tracking-widest uppercase">Artigianato Italiano</p>
+				<h1 class="text-5xl md:text-7xl font-bold tracking-tight" style="font-family: var(--font-display)">
+					My Hands.<br />Your steps.
+				</h1>
+				<p class="text-xl text-neutral-300">
+					Ogni paio di scarpe racconta una storia. Una storia di passione, artigianato ed eccellenza italiana.
+				</p>
+				<div class="flex flex-wrap gap-4 pt-4">
+					<a
+						href="/catalogo"
+						class="inline-flex items-center justify-center px-6 py-3 bg-white text-neutral-900 font-medium rounded-md hover:bg-neutral-100 transition-colors"
+					>
+						Scopri le Creazioni
+					</a>
+					<a
+						href="/chi-sono"
+						class="inline-flex items-center justify-center px-6 py-3 border border-white text-white font-medium rounded-md hover:bg-white/10 transition-colors"
+					>
+						La Nostra Storia
+					</a>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Brand Story Section -->
+	<section class="py-16 md:py-24 bg-neutral-50">
+		<div class="container mx-auto px-4 sm:px-6 lg:px-8">
+			<div class="max-w-3xl mx-auto text-center space-y-6">
+				<h2 class="text-3xl md:text-4xl font-bold tracking-tight">
+					Da Fendi a Denif
+				</h2>
+				<p class="text-lg text-neutral-600 leading-relaxed">
+					Dopo oltre vent'anni come artigiana presso la prestigiosa maison Fendi, ho deciso di
+					intraprendere il mio percorso. Ogni mia creazione porta con sé l'esperienza e la passione
+					accumulate in anni di lavoro con i pellami più pregiati e le tecniche più raffinate.
+				</p>
+				<p class="text-lg text-neutral-600 leading-relaxed">
+					Ogni scarpa è un pezzo unico, realizzata interamente a mano nel mio laboratorio.
+					Dalla scelta del pellame alla cucitura finale, ogni dettaglio è curato con la stessa
+					dedizione che mettevo nelle creazioni Fendi.
+				</p>
+				<div class="pt-8">
+					<a
+						href="/chi-sono"
+						class="inline-flex items-center text-neutral-900 font-medium hover:text-neutral-600 transition-colors group"
+					>
+						Scopri di più sulla mia storia
+						<svg xmlns="http://www.w3.org/2000/svg" class="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<line x1="5" x2="19" y1="12" y2="12"/>
+							<polyline points="12 5 19 12 12 19"/>
+						</svg>
+					</a>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Craftsmanship Features -->
+	<section class="py-16 md:py-24">
+		<div class="container mx-auto px-4 sm:px-6 lg:px-8">
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+				<div class="text-center space-y-4">
+					<div class="w-16 h-16 mx-auto bg-neutral-100 rounded-full flex items-center justify-center">
+						<svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-neutral-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+						</svg>
+					</div>
+					<h3 class="text-xl font-semibold">Qualità Artigianale</h3>
+					<p class="text-neutral-600">
+						Ogni paio è realizzato a mano con tecniche tradizionali tramandate di generazione in generazione.
+					</p>
+				</div>
+
+				<div class="text-center space-y-4">
+					<div class="w-16 h-16 mx-auto bg-neutral-100 rounded-full flex items-center justify-center">
+						<svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-neutral-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M20.42 4.58a5.4 5.4 0 0 0-7.65 0l-.77.78-.77-.78a5.4 5.4 0 0 0-7.65 0C1.46 6.7 1.33 10.28 4 13l8 8 8-8c2.67-2.72 2.54-6.3.42-8.42z"/>
+						</svg>
+					</div>
+					<h3 class="text-xl font-semibold">Passione Prima di Tutto</h3>
+					<p class="text-neutral-600">
+						Amore per il mestiere e attenzione al dettaglio in ogni fase della creazione.
+					</p>
+				</div>
+
+				<div class="text-center space-y-4">
+					<div class="w-16 h-16 mx-auto bg-neutral-100 rounded-full flex items-center justify-center">
+						<svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-neutral-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M12 2v20M2 12h20"/>
+							<circle cx="12" cy="12" r="10"/>
+						</svg>
+					</div>
+					<h3 class="text-xl font-semibold">100% Made in Italy</h3>
+					<p class="text-neutral-600">
+						Pellami italiani, cuoio toscano e lavorazione artigianale completamente made in Italy.
+					</p>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Featured Products -->
+	<section class="py-16 md:py-24 bg-neutral-50">
+		<div class="container mx-auto px-4 sm:px-6 lg:px-8">
+			<div class="text-center mb-12">
+				<h2 class="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+					Le Nostre Creazioni
+				</h2>
+				<p class="text-lg text-neutral-600">
+					Una selezione dei nostri modelli più apprezzati
+				</p>
+			</div>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+				{featuredProducts.map((product) => (
+					<ProductCard product={product} />
+				))}
+			</div>
+
+			<div class="text-center mt-12">
+				<a
+					href="/catalogo"
+					class="inline-flex items-center justify-center px-6 py-3 bg-neutral-900 text-white font-medium rounded-md hover:bg-neutral-800 transition-colors"
+				>
+					Vedi Tutto il Catalogo
+				</a>
+			</div>
+		</div>
+	</section>
+
+	<!-- CTA Section -->
+	<section class="py-16 md:py-24 bg-neutral-900 text-white">
+		<div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+			<h2 class="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+				Pronta per Camminare con Stile?
+			</h2>
+			<p class="text-lg text-neutral-300 mb-8 max-w-2xl mx-auto">
+				Contattami per una consulenza personalizzata o per scoprire come realizzare
+				il paio perfetto per te.
+			</p>
+			<div class="flex flex-wrap justify-center gap-4">
+				<a
+					href="/catalogo"
+					class="inline-flex items-center justify-center px-6 py-3 bg-white text-neutral-900 font-medium rounded-md hover:bg-neutral-100 transition-colors"
+				>
+					Sfoglia il Catalogo
+				</a>
+				<a
+					href="https://wa.me/39XXXXXXXXXX"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="inline-flex items-center justify-center px-6 py-3 border border-white text-white font-medium rounded-md hover:bg-white/10 transition-colors"
+				>
+					Contattami su WhatsApp
+				</a>
+			</div>
+		</div>
+	</section>
+</Layout>

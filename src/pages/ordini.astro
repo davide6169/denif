@@ -1,0 +1,279 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const title = 'I Miei Ordini - DENIF';
+const description = 'Visualizza lo storico dei tuoi ordini DENIF';
+---
+
+<Layout title={title} description={description}>
+	<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+		{/* Page Header */}
+		<div class="mb-8">
+			<h1 class="text-3xl font-semibold mb-2" style="font-family: var(--font-display)">
+				I Miei Ordini
+			</h1>
+			<p class="text-neutral-600">
+				Visualizza lo storico dei tuoi ordini
+			</p>
+		</div>
+
+		{/* Loading State */}
+		<div id="loading" class="text-center py-12">
+			<svg class="animate-spin h-12 w-12 text-neutral-900 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+				<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+				<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+			</svg>
+			<p class="text-neutral-600">Caricamento ordini...</p>
+		</div>
+
+		{/* No Orders */}
+		<div id="no-orders" class="hidden text-center py-12">
+			<svg class="w-16 h-16 text-neutral-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+			</svg>
+			<h2 class="text-2xl font-semibold mb-2" style="font-family: var(--font-display)">
+				Nessun ordine trovato
+			</h2>
+			<p class="text-neutral-600 mb-6">
+				Non hai ancora effettuato nessun ordine.
+			</p>
+			<a
+				href="/catalogo"
+				class="inline-block bg-neutral-900 text-white px-6 py-3 rounded-md font-medium hover:bg-neutral-800 transition-colors"
+			>
+				Inizia lo Shopping
+			</a>
+		</div>
+
+		{/* Orders List */}
+		<div id="orders-list" class="hidden space-y-6">
+			<!-- Orders will be rendered here -->
+		</div>
+
+		<!-- Order Detail Modal */}
+		<div id="order-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+			<div class="absolute inset-0 bg-black/50 backdrop-blur-sm" id="modal-backdrop"></div>
+			<div class="relative bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+				<button
+					id="close-modal"
+					class="absolute top-4 right-4 p-2 text-neutral-600 hover:text-neutral-900 transition-colors"
+					aria-label="Chiudi"
+				>
+					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+					</svg>
+				</button>
+				<div id="modal-content" class="p-6">
+					<!-- Order details will be rendered here -->
+				</div>
+			</div>
+		</div>
+	</div>
+</Layout>
+
+<script>
+	interface Order {
+		orderId: string;
+		customer: any;
+		items: any[];
+		totals: any;
+		status: string;
+		createdAt: string;
+		estimatedDelivery?: string;
+		payment: any;
+	}
+
+	// Load orders
+	async function loadOrders() {
+		try {
+			const { getOrders } = await import('../lib/order-storage');
+			const orders = getOrders();
+
+			// Hide loading
+			document.getElementById('loading')?.classList.add('hidden');
+
+			if (orders.length === 0) {
+				document.getElementById('no-orders')?.classList.remove('hidden');
+				return;
+			}
+
+			displayOrders(orders);
+		} catch (error) {
+			console.error('Error loading orders:', error);
+			document.getElementById('loading')?.classList.add('hidden');
+			document.getElementById('no-orders')?.classList.remove('hidden');
+		}
+	}
+
+	function getStatusBadge(status: string): string {
+		const statusConfig = {
+			'pending': { label: 'In Attesa', classes: 'bg-yellow-100 text-yellow-800' },
+			'confirmed': { label: 'Confermato', classes: 'bg-green-100 text-green-800' },
+			'processing': { label: 'In Elaborazione', classes: 'bg-blue-100 text-blue-800' },
+			'shipped': { label: 'Spedito', classes: 'bg-purple-100 text-purple-800' },
+			'delivered': { label: 'Consegnato', classes: 'bg-gray-100 text-gray-800' },
+			'cancelled': { label: 'Cancellato', classes: 'bg-red-100 text-red-800' },
+		};
+
+		const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
+		return `<span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${config.classes}">${config.label}</span>`;
+	}
+
+	function displayOrders(orders: Order[]) {
+		const container = document.getElementById('orders-list');
+		if (!container) return;
+
+		container.classList.remove('hidden');
+		container.innerHTML = orders.map(order => {
+			const date = new Date(order.createdAt);
+			const itemNames = order.items.map(item => item.name).join(', ');
+
+			return `
+				<div class="bg-white border border-neutral-200 rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer order-card"
+				     data-order-id="${order.orderId}">
+					<div class="flex items-start justify-between mb-4">
+						<div>
+							<h3 class="text-lg font-semibold" style="font-family: var(--font-display)">
+								${order.orderId}
+							</h3>
+							<p class="text-sm text-neutral-500">
+								${date.toLocaleDateString('it-IT', {
+									year: 'numeric',
+									month: 'long',
+									day: 'numeric',
+									hour: '2-digit',
+									minute: '2-digit'
+								})}
+							</p>
+						</div>
+						${getStatusBadge(order.status)}
+					</div>
+
+					<div class="mb-4">
+						<p class="text-sm text-neutral-600 line-clamp-2">
+							${order.items.length} ${order.items.length === 1 ? 'prodotto' : 'prodotti'}: ${itemNames}
+						</p>
+					</div>
+
+					<div class="flex items-center justify-between">
+						<span class="text-lg font-semibold">€${order.totals.total.toFixed(2)}</span>
+						<button class="text-sm font-medium text-neutral-900 hover:text-neutral-600 transition-colors view-details-btn"
+						        data-order-id="${order.orderId}">
+							Vedi Dettagli →
+						</button>
+					</div>
+				</div>
+			`;
+		}).join('');
+
+		// Add click listeners
+		container.querySelectorAll('.view-details-btn, .order-card').forEach(el => {
+			el.addEventListener('click', (e) => {
+				const orderId = (e.currentTarget as HTMLElement).dataset.orderId;
+				if (orderId) {
+					showOrderDetails(orderId);
+				}
+			});
+		});
+	}
+
+	function showOrderDetails(orderId: string) {
+		// Find order
+		const { getOrderById } = require('../lib/order-storage');
+		const order = getOrderById(orderId);
+
+		if (!order) return;
+
+		const modal = document.getElementById('order-modal');
+		const modalContent = document.getElementById('modal-content');
+
+		if (!modal || !modalContent) return;
+
+		// Render order details
+		const date = new Date(order.createdAt);
+
+		modalContent.innerHTML = `
+			<h2 class="text-xl font-semibold mb-4" style="font-family: var(--font-display)">
+				Ordine ${order.orderId}
+			</h2>
+
+			<div class="space-y-4">
+				<div class="flex items-center justify-between">
+					<span class="text-sm text-neutral-500">Data</span>
+					<span class="font-medium">${date.toLocaleDateString('it-IT')}</span>
+				</div>
+
+				<div class="flex items-center justify-between">
+					<span class="text-sm text-neutral-500">Stato</span>
+					${getStatusBadge(order.status)}
+				</div>
+
+				<div class="border-t border-neutral-200 pt-4">
+					<h3 class="font-semibold mb-3">Prodotti</h3>
+					<div class="space-y-3">
+						${order.items.map(item => `
+							<div class="flex items-center space-x-3">
+								<img src="${item.image}" alt="${item.name}" class="w-12 h-12 object-cover rounded-md border border-neutral-200">
+								<div class="flex-1">
+									<p class="font-medium text-sm">${item.name}</p>
+									<p class="text-xs text-neutral-500">Taglia: ${item.size} | Qtà: ${item.quantity}</p>
+								</div>
+								<p class="font-medium text-sm">€${item.subtotal.toFixed(2)}</p>
+							</div>
+						`).join('')}
+					</div>
+				</div>
+
+				<div class="border-t border-neutral-200 pt-4 space-y-2">
+					<div class="flex justify-between text-sm">
+						<span class="text-neutral-600">Subtotale</span>
+						<span>€${order.totals.subtotal.toFixed(2)}</span>
+					</div>
+					<div class="flex justify-between text-sm">
+						<span class="text-neutral-600">Spedizione</span>
+						<span>${order.totals.shipping === 0 ? 'Gratis' : '€' + order.totals.shipping.toFixed(2)}</span>
+					</div>
+					<div class="flex justify-between text-lg font-semibold pt-2 border-t border-neutral-200">
+						<span>Totale</span>
+						<span class="text-neutral-900">€${order.totals.total.toFixed(2)}</span>
+					</div>
+				</div>
+
+				${order.estimatedDelivery ? `
+					<div class="bg-blue-50 border border-blue-200 rounded-md p-3">
+						<p class="text-sm text-blue-800">
+							<strong>Consegna stimata:</strong> ${new Date(order.estimatedDelivery).toLocaleDateString('it-IT', {
+								weekday: 'long',
+								year: 'numeric',
+								month: 'long',
+								day: 'numeric'
+							})}
+						</p>
+					</div>
+				` : ''}
+			</div>
+		`;
+
+		modal.classList.remove('hidden');
+	}
+
+	// Close modal
+	function closeModal() {
+		document.getElementById('order-modal')?.classList.add('hidden');
+	}
+
+	// Event listeners
+	document.addEventListener('DOMContentLoaded', () => {
+		loadOrders();
+
+		document.getElementById('modal-backdrop')?.addEventListener('click', closeModal);
+		document.getElementById('close-modal')?.addEventListener('click', closeModal);
+
+		// Close on escape key
+		document.addEventListener('keydown', (e) => {
+			if (e.key === 'Escape') {
+				closeModal();
+			}
+		});
+	});
+</script>

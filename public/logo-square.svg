@@ -1,0 +1,27 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="120" height="120" fill="#1a1a1a"/>
+
+  <!-- Decorative border -->
+  <rect x="5" y="5" width="110" height="110" fill="none" stroke="#f5f5f5" stroke-width="1" opacity="0.3"/>
+
+  <!-- Shoe icon - centered and larger -->
+  <g transform="translate(30, 30)">
+    <!-- Shoe sole -->
+    <path d="M5 40 Q5 48 20 48 L45 48 Q52 48 52 40 L52 30 L5 30 Z" fill="#f5f5f5"/>
+
+    <!-- Shoe upper -->
+    <path d="M5 30 Q9 12 28 8 Q35 6 50 12 Q57 14 57 30 L5 30 Z" fill="#f5f5f5"/>
+
+    <!-- Heel detail -->
+    <path d="M5 30 L5 40 Q5 43 10 43 L15 43 L15 30 Z" fill="#e0e0e0"/>
+
+    <!-- Stitching detail -->
+    <path d="M10 22 Q20 16 35 16 Q45 16 52 22" stroke="#1a1a1a" stroke-width="1" fill="none" stroke-dasharray="3 1.5"/>
+  </g>
+
+  <!-- Brand name below icon -->
+  <text x="60" y="105" font-family="Georgia, serif" font-size="16" font-weight="600" letter-spacing="3" fill="#f5f5f5" text-anchor="middle">
+    DENIF
+  </text>
+</svg>

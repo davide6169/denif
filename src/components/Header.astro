@@ -1,0 +1,110 @@
+---
+const currentPath = Astro.url.pathname;
+const navItems = [
+	{ name: 'Home', href: '/' },
+	{ name: 'Catalogo', href: '/catalogo' },
+	{ name: 'Chi Sono', href: '/chi-sono' },
+	{ name: 'I Miei Ordini', href: '/ordini' }
+];
+---
+
+<header class="sticky top-0 z-50 w-full border-b border-neutral-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+	<div class="container mx-auto px-4 sm:px-6 lg:px-8">
+		<div class="flex h-16 items-center justify-between">
+			<!-- Logo -->
+			<a href="/" class="flex items-center space-x-3 group">
+				<img src="/logo.png" alt="Denif - Scarpe Artigianali" class="h-10 w-auto" width="170" height="60" />
+				<div class="flex flex-col">
+					<span class="text-2xl font-semibold tracking-tight" style="font-family: var(--font-display)">
+						DENIF
+					</span>
+					<span class="text-[10px] text-neutral-500 tracking-wide hidden sm:block">
+						Design · Emozioni · Natura · Innovazione · Finiture
+					</span>
+				</div>
+			</a>
+
+			<!-- Desktop Navigation -->
+			<nav class="hidden md:flex items-center space-x-8">
+				{navItems.map(item => (
+					<a
+						href={item.href}
+						class={`text-sm font-medium transition-colors hover:text-neutral-600 ${
+							currentPath === item.href
+								? 'text-neutral-900'
+								: 'text-neutral-500'
+						}`}
+					>
+						{item.name}
+					</a>
+				))}
+				<button
+					id="cart-button-desktop"
+					class="relative p-2 text-neutral-600 hover:text-neutral-900 transition-colors"
+					aria-label="Carrello"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<circle cx="8" cy="21" r="1"/>
+						<circle cx="19" cy="21" r="1"/>
+						<path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
+					</svg>
+					<span id="cart-count-desktop" class="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-neutral-900 text-white text-xs flex items-center justify-center hidden">0</span>
+				</button>
+			</nav>
+
+			<!-- Mobile Menu Button -->
+			<div class="flex md:hidden items-center space-x-2">
+				<button
+					id="cart-button-mobile"
+					class="relative p-2 text-neutral-600 hover:text-neutral-900 transition-colors"
+					aria-label="Carrello"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<circle cx="8" cy="21" r="1"/>
+						<circle cx="19" cy="21" r="1"/>
+						<path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>
+					</svg>
+					<span id="cart-count-mobile" class="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-neutral-900 text-white text-xs flex items-center justify-center hidden">0</span>
+				</button>
+				<button
+					id="mobile-menu-button"
+					class="p-2 text-neutral-600 hover:text-neutral-900 transition-colors"
+					aria-label="Menu"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<line x1="4" x2="20" y1="12" y2="12"/>
+						<line x1="4" x2="20" y1="6" y2="6"/>
+						<line x1="4" x2="20" y1="18" y2="18"/>
+					</svg>
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Mobile Navigation Menu -->
+	<div id="mobile-menu" class="hidden md:hidden border-t border-neutral-200 bg-white">
+		<nav class="container mx-auto px-4 py-4 space-y-2">
+			{navItems.map(item => (
+				<a
+					href={item.href}
+					class={`block py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+						currentPath === item.href
+							? 'bg-neutral-100 text-neutral-900'
+							: 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900'
+					}`}
+				>
+					{item.name}
+				</a>
+			))}
+		</nav>
+	</div>
+</header>
+
+<script>
+	const mobileMenuButton = document.getElementById('mobile-menu-button');
+	const mobileMenu = document.getElementById('mobile-menu');
+
+	mobileMenuButton?.addEventListener('click', () => {
+		mobileMenu?.classList.toggle('hidden');
+	});
+</script>

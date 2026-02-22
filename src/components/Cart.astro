@@ -1,0 +1,241 @@
+---
+// Cart component with localStorage and Stripe integration
+---
+
+<div id="cart-overlay" class="fixed inset-0 z-50 hidden">
+	<!-- Backdrop -->
+	<div
+		id="cart-backdrop"
+		class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+	></div>
+
+	<!-- Cart Panel -->
+	<div class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl flex flex-col transform translate-x-full transition-transform duration-300" id="cart-panel">
+		<!-- Header -->
+		<div class="flex items-center justify-between border-b border-neutral-200 p-4">
+			<h2 class="text-lg font-semibold" style="font-family: var(--font-display)">Carrello</h2>
+			<button
+				id="close-cart"
+				class="p-2 text-neutral-600 hover:text-neutral-900 transition-colors"
+				aria-label="Chiudi carrello"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<line x1="18" x2="6" y1="6" y2="18"/>
+					<line x1="6" x2="18" y1="6" y2="18"/>
+				</svg>
+			</button>
+		</div>
+
+		<!-- Cart Items -->
+		<div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-4">
+			<!-- Cart items will be rendered here -->
+			<p class="text-center text-neutral-500 py-8">Il carrello è vuoto</p>
+		</div>
+
+		<!-- Footer -->
+		<div id="cart-footer" class="border-t border-neutral-200 p-4 space-y-4 hidden">
+			<div class="flex items-center justify-between">
+				<span class="font-medium">Totale</span>
+				<span id="cart-total" class="text-xl font-semibold">€0.00</span>
+			</div>
+			<a
+				id="checkout-button"
+				href="/checkout"
+				class="block w-full bg-neutral-900 text-white text-center py-3 px-4 rounded-md font-medium hover:bg-neutral-800 transition-colors"
+			>
+				Procedi al Checkout
+			</a>
+			<p class="text-xs text-center text-neutral-500">
+				Pagamenti sicuri
+			</p>
+			<p id="whatsapp-option" class="text-xs text-center text-neutral-400 hidden">
+				oppure <a href="#" class="underline hover:text-neutral-600" id="whatsapp-link">ordina via WhatsApp</a>
+			</p>
+		</div>
+	</div>
+</div>
+
+<script define:vars={{ stripePublicKey: import.meta.env.PUBLIC_STRIPE_PUBLIC_KEY || '' }}>
+	// Cart state
+	interface CartItem {
+		id: string;
+		name: string;
+		price: number;
+		image: string;
+		size: string;
+		quantity: number;
+	}
+
+	let cart: CartItem[] = [];
+
+	// Load cart from localStorage
+	function loadCart(): void {
+		const stored = localStorage.getItem('denif-cart');
+		if (stored) {
+			cart = JSON.parse(stored);
+		}
+		updateCartUI();
+	}
+
+	// Save cart to localStorage
+	function saveCart(): void {
+		localStorage.setItem('denif-cart', JSON.stringify(cart));
+		updateCartUI();
+	}
+
+	// Update cart UI
+	function updateCartUI(): void {
+		const cartItemsContainer = document.getElementById('cart-items');
+		const cartFooter = document.getElementById('cart-footer');
+		const cartTotal = document.getElementById('cart-total');
+		const cartCounts = document.querySelectorAll('[id^="cart-count"]');
+		const whatsappOption = document.getElementById('whatsapp-option');
+		const whatsappLink = document.getElementById('whatsapp-link');
+
+		if (!cartItemsContainer || !cartFooter || !cartTotal) return;
+
+		// Update cart counts
+		const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+		cartCounts.forEach((count) => {
+			if (totalItems > 0) {
+				count.textContent = String(totalItems);
+				count.classList.remove('hidden');
+			} else {
+				count.classList.add('hidden');
+			}
+		});
+
+		if (cart.length === 0) {
+			cartItemsContainer.innerHTML = '<p class="text-center text-neutral-500 py-8">Il carrello è vuoto</p>';
+			cartFooter.classList.add('hidden');
+			return;
+		}
+
+		cartFooter.classList.remove('hidden');
+
+		// Render cart items
+		cartItemsContainer.innerHTML = cart.map((item, index) => `
+			<div class="flex items-center space-x-4 border-b border-neutral-100 pb-4">
+				<img
+					src="${item.image}"
+					alt="${item.name}"
+					class="w-20 h-20 object-cover rounded-md"
+				/>
+				<div class="flex-1 min-w-0">
+					<h4 class="text-sm font-medium truncate">${item.name}</h4>
+					<p class="text-sm text-neutral-500">Taglia: ${item.size}</p>
+					<p class="text-sm font-semibold">€${item.price.toFixed(2)}</p>
+				</div>
+				<div class="flex items-center space-x-2">
+					<button
+						class="quantity-minus w-8 h-8 rounded-full border border-neutral-300 flex items-center justify-center hover:bg-neutral-100 transition-colors"
+						data-index="${index}"
+					>
+						−
+					</button>
+					<span class="w-8 text-center">${item.quantity}</span>
+					<button
+						class="quantity-plus w-8 h-8 rounded-full border border-neutral-300 flex items-center justify-center hover:bg-neutral-100 transition-colors"
+						data-index="${index}"
+					>
+						+
+					</button>
+				</div>
+			</div>
+		`).join('');
+
+		// Update total
+		const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+		cartTotal.textContent = `€${total.toFixed(2)}`;
+
+		// Update WhatsApp link
+		if (whatsappOption && whatsappLink) {
+			whatsappOption.classList.remove('hidden');
+			const message = cart.map(item =>
+				`${item.name} (Taglia: ${item.size}) - ${item.quantity}x - €${(item.price * item.quantity).toFixed(2)}`
+			).join('\n');
+			const whatsappMessage = encodeURIComponent(`Ciao! Vorrei ordinare:\n\n${message}\n\nTotale: €${total.toFixed(2)}`);
+			whatsappLink.href = `https://wa.me/39XXXXXXXXXX?text=${whatsappMessage}`;
+			whatsappLink.target = '_blank';
+			whatsappLink.rel = 'noopener noreferrer';
+		}
+
+		// Add event listeners
+		document.querySelectorAll('.quantity-minus').forEach((btn) => {
+			btn.addEventListener('click', (e) => {
+				const index = Number((e.target as HTMLElement).dataset.index);
+				if (cart[index].quantity > 1) {
+					cart[index].quantity--;
+					saveCart();
+				} else {
+					cart.splice(index, 1);
+					saveCart();
+				}
+			});
+		});
+
+		document.querySelectorAll('.quantity-plus').forEach((btn) => {
+			btn.addEventListener('click', (e) => {
+				const index = Number((e.target as HTMLElement).dataset.index);
+				cart[index].quantity++;
+				saveCart();
+			});
+		});
+	}
+
+	// Add item to cart
+	window.addToCart = function(item: Omit<CartItem, 'quantity'>): void {
+		const existingIndex = cart.findIndex(
+			(i) => i.id === item.id && i.size === item.size
+		);
+
+		if (existingIndex >= 0) {
+			cart[existingIndex].quantity++;
+		} else {
+			cart.push({ ...item, quantity: 1 });
+		}
+
+		saveCart();
+		openCart();
+	}
+
+	// Cart UI functions
+	function openCart(): void {
+		const overlay = document.getElementById('cart-overlay');
+		const panel = document.getElementById('cart-panel');
+		overlay?.classList.remove('hidden');
+		setTimeout(() => {
+			panel?.classList.remove('translate-x-full');
+		}, 10);
+	}
+
+	function closeCart(): void {
+		const overlay = document.getElementById('cart-overlay');
+		const panel = document.getElementById('cart-panel');
+		panel?.classList.add('translate-x-full');
+		setTimeout(() => {
+			overlay?.classList.add('hidden');
+		}, 300);
+	}
+
+	// Event listeners
+	document.addEventListener('DOMContentLoaded', () => {
+		loadCart();
+
+		// Cart buttons
+		const cartButtons = document.querySelectorAll('[id^="cart-button"]');
+		cartButtons.forEach((btn) => {
+			btn.addEventListener('click', openCart);
+		});
+
+		document.getElementById('close-cart')?.addEventListener('click', closeCart);
+		document.getElementById('cart-backdrop')?.addEventListener('click', closeCart);
+
+		// The checkout button now uses direct href link to /checkout
+		// No need for click handler
+	});
+
+	// Make cart functions available globally
+	(window as any).loadCart = loadCart;
+	(window as any).saveCart = saveCart;
+</script>

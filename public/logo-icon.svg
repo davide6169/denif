@@ -1,0 +1,19 @@
+<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="25" cy="25" r="24" fill="#1a1a1a"/>
+
+  <!-- Shoe icon -->
+  <g transform="translate(8, 12)">
+    <!-- Shoe sole -->
+    <path d="M3 30 Q3 34 10 34 L24 34 Q28 34 28 30 L28 24 L3 24 Z" fill="#f5f5f5"/>
+
+    <!-- Shoe upper -->
+    <path d="M3 24 Q5 14 14 11 Q18 9 26 13 Q30 14 30 24 L3 24 Z" fill="#f5f5f5"/>
+
+    <!-- Heel detail -->
+    <path d="M3 24 L3 30 Q3 31 5 31 L8 31 L8 24 Z" fill="#e0e0e0"/>
+
+    <!-- Stitching detail -->
+    <path d="M5 19 Q10 16 18 16 Q23 16 27 19" stroke="#1a1a1a" stroke-width="0.8" fill="none" stroke-dasharray="2 1"/>
+  </g>
+</svg>

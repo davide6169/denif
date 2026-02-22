@@ -1,0 +1,284 @@
+---
+import Layout from '../layouts/Layout.astro';
+import CheckoutForm from '../components/CheckoutForm';
+import OrderSummary from '../components/OrderSummary';
+import type { CartItem } from '../lib/types';
+
+// Get cart from server-side (if available) or redirect to cart
+let cartItems: CartItem[] = [];
+
+// We'll handle cart loading on the client side
+const title = 'Checkout - DENIF';
+const description = 'Completa il tuo ordine di scarpe artigianali DENIF';
+---
+
+<Layout title={title} description={description}>
+	<div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+		{/* Page Header */}
+		<div class="mb-8">
+			<h1 class="text-3xl font-semibold mb-2" style="font-family: var(--font-display)">
+				Checkout
+			</h1>
+			<p class="text-neutral-600">
+				Completa il tuo ordine in pochi passaggi
+			</p>
+		</div>
+
+		{/* Loading State */}
+		<div id="checkout-loading" class="text-center py-12">
+			<svg class="animate-spin h-12 w-12 text-neutral-900 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+				<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+				<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+			</svg>
+			<p class="text-neutral-600">Caricamento carrello...</p>
+		</div>
+
+		{/* Empty Cart Message */}
+		<div id="empty-cart" class="hidden text-center py-12">
+			<svg class="w-16 h-16 text-neutral-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+			</svg>
+			<h2 class="text-2xl font-semibold mb-2" style="font-family: var(--font-display)">
+				Il carrello è vuoto
+			</h2>
+			<p class="text-neutral-600 mb-6">
+				Aggiungi prodotti al carrello prima di procedere al checkout
+			</p>
+			<a
+				href="/catalogo"
+				class="inline-block bg-neutral-900 text-white px-6 py-3 rounded-md font-medium hover:bg-neutral-800 transition-colors"
+			>
+				Vai al Catalogo
+			</a>
+		</div>
+
+		{/* Checkout Content */}
+		<div id="checkout-content" class="hidden">
+			<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+				{/* Checkout Form */}
+				<div class="lg:col-span-2">
+					<div id="checkout-form-container"></div>
+				</div>
+
+				{/* Order Summary */}
+				<div class="lg:col-span-1">
+					<div id="order-summary-container"></div>
+				</div>
+			</div>
+		</div>
+
+		{/* Error Message */}
+		<div id="checkout-error" class="hidden max-w-md mx-auto mt-8 p-4 bg-red-50 border border-red-200 rounded-md">
+			<div class="flex items-start space-x-3">
+				<svg class="w-6 h-6 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+					<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+				</svg>
+				<div>
+					<h3 class="font-medium text-red-800">Errore durante il checkout</h3>
+					<p id="error-message" class="text-sm text-red-700 mt-1"></p>
+				</div>
+			</div>
+		</div>
+	</div>
+</Layout>
+
+<script>
+	// Import React components (they will be hydrated)
+	import CheckoutForm from '../components/CheckoutForm';
+	import OrderSummary from '../components/OrderSummary';
+
+	// Cart state
+	interface CartItem {
+		id: string;
+		name: string;
+		price: number;
+		image: string;
+		size: string;
+		quantity: number;
+	}
+
+	let cart: CartItem[] = [];
+	let isProcessing = false;
+
+	// Load cart from localStorage
+	function loadCart(): boolean {
+		try {
+			const stored = localStorage.getItem('denif-cart');
+			if (stored) {
+				cart = JSON.parse(stored);
+				return cart.length > 0;
+			}
+			return false;
+		} catch (error) {
+			console.error('Error loading cart:', error);
+			return false;
+		}
+	}
+
+	// Calculate totals
+	function calculateTotals() {
+		const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+		const shipping = subtotal >= 200 ? 0 : 10; // Free shipping over €200
+		const total = subtotal + shipping;
+		return { subtotal, shipping, total };
+	}
+
+	// Handle form submission
+	async function handleCheckout(customer: any, paymentMethod: string, paymentMethodId?: string) {
+		if (isProcessing) return;
+
+		isProcessing = true;
+		updateUI();
+
+		try {
+			// Calculate totals
+			const { subtotal, shipping, total } = calculateTotals();
+
+			// Call production API
+			const response = await fetch('/api/checkout', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					cartItems: cart,
+					customer,
+					paymentMethod,
+					paymentMethodId,
+				}),
+			});
+
+			const data = await response.json();
+
+			if (!response.ok) {
+				// Check if payment requires additional action (Stripe 3D Secure)
+				if (data.requiresAction && data.clientSecret) {
+					// Handle Stripe requires_action
+					// For now, show error message
+					throw new Error('Pagamento richiede ulteriore conferma. Riprova.');
+				}
+				throw new Error(data.error || 'Pagamento fallito');
+			}
+
+			if (!data.success) {
+				throw new Error(data.error || 'Errore durante il checkout');
+			}
+
+			// Clear cart
+			localStorage.removeItem('denif-cart');
+
+			// Redirect to confirmation page
+			window.location.href = `/ordine-confermato?orderId=${data.orderId}`;
+
+		} catch (error: any) {
+			console.error('Checkout error:', error);
+			showError(error.message || 'Si è verificato un errore durante il checkout');
+			isProcessing = false;
+			updateUI();
+		}
+	}
+
+	// Show error message
+	function showError(message: string) {
+		const errorDiv = document.getElementById('checkout-error');
+		const errorMessage = document.getElementById('error-message');
+		if (errorDiv && errorMessage) {
+			errorMessage.textContent = message;
+			errorDiv.classList.remove('hidden');
+			errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		}
+	}
+
+	// Update UI based on state
+	function updateUI() {
+		// This will trigger re-render of React components
+		const container = document.getElementById('checkout-form-container');
+		if (container) {
+			// Re-render React component
+			renderCheckoutForm();
+		}
+	}
+
+	// Render React components
+	function renderCheckoutForm() {
+		const container = document.getElementById('checkout-form-container');
+		const summaryContainer = document.getElementById('order-summary-container');
+
+		if (!container || !summaryContainer) return;
+
+		// Clear previous content
+		container.innerHTML = '';
+		summaryContainer.innerHTML = '';
+
+		// Calculate totals
+		const { subtotal, shipping, total } = calculateTotals();
+
+		// Create a root element for React
+		const formRoot = document.createElement('div');
+		container.appendChild(formRoot);
+
+		const summaryRoot = document.createElement('div');
+		summaryContainer.appendChild(summaryRoot);
+
+		// We'll use the React components that are already imported
+		// The hydration happens automatically
+	}
+
+	// Initialize checkout page
+	document.addEventListener('DOMContentLoaded', () => {
+		const loadingEl = document.getElementById('checkout-loading');
+		const emptyCartEl = document.getElementById('empty-cart');
+		const contentEl = document.getElementById('checkout-content');
+
+		// Load cart
+		const hasCart = loadCart();
+
+		// Hide loading
+		if (loadingEl) {
+			loadingEl.classList.add('hidden');
+		}
+
+		// Show appropriate content
+		if (!hasCart) {
+			emptyCartEl?.classList.remove('hidden');
+		} else {
+			contentEl?.classList.remove('hidden');
+		}
+	});
+</script>
+
+<CheckoutForm client:load id="checkout-form-react" />
+<OrderSummary
+	client:load
+	id="order-summary-react"
+	items={cartItems}
+	subtotal={0}
+	shipping={0}
+	total={0}
+/>
+
+<script>
+	// This script handles the React hydration and communication
+	document.addEventListener('astro:page-load', () => {
+		// Wait for React components to be hydrated
+		setTimeout(() => {
+			const checkoutForm = document.querySelector('#checkout-form-react');
+			const orderSummary = document.querySelector('#order-summary-react');
+
+			if (checkoutForm && orderSummary) {
+				// Get cart data
+				const cartData = localStorage.getItem('denif-cart');
+				if (cartData) {
+					const cart = JSON.parse(cartData);
+
+					// Calculate totals
+					const subtotal = cart.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+					const shipping = subtotal >= 200 ? 0 : 10;
+					const total = subtotal + shipping;
+
+					// The components will auto-render with the cart data
+				}
+			}
+		}, 100);
+	});
+</script>

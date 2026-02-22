@@ -1,0 +1,26 @@
+<svg width="200" height="60" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Shoe Icon - Minimalist outline -->
+  <g transform="translate(10, 10)">
+    <!-- Shoe sole -->
+    <path d="M5 35 Q5 40 15 40 L35 40 Q40 40 40 35 L40 28 L5 28 Z" fill="#1a1a1a"/>
+
+    <!-- Shoe upper -->
+    <path d="M5 28 Q8 15 20 12 Q25 10 35 15 Q40 17 40 28 L5 28 Z" fill="#1a1a1a"/>
+
+    <!-- Heel detail -->
+    <path d="M5 28 L5 35 Q5 37 8 37 L12 37 L12 28 Z" fill="#333"/>
+
+    <!-- Stitching detail -->
+    <path d="M8 22 Q15 18 25 18 Q32 18 37 22" stroke="#666" stroke-width="0.5" fill="none" stroke-dasharray="2 1"/>
+  </g>
+
+  <!-- Brand Name -->
+  <text x="60" y="38" font-family="Georgia, serif" font-size="28" font-weight="600" letter-spacing="4" fill="#1a1a1a">
+    DENIF
+  </text>
+
+  <!-- Tagline -->
+  <text x="60" y="52" font-family="Inter, sans-serif" font-size="8" letter-spacing="2" fill="#666">
+    MY HANDS. YOUR STEPS.
+  </text>
+</svg>

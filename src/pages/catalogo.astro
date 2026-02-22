@@ -1,0 +1,308 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ProductCard from '../components/ProductCard.astro';
+import { fetchProducts, filterByCategory, filterBySize, filterInStock, searchProducts } from '../lib/airtable';
+
+const allProducts = await fetchProducts();
+const categories = ['all', ...new Set(allProducts.map((p) => p.category))];
+const allSizes = ['all', ...new Set(allProducts.flatMap((p) => p.sizes))].sort();
+---
+
+<Layout title="Catalogo - Denif">
+	<section class="py-8 md:py-12">
+		<div class="container mx-auto px-4 sm:px-6 lg:px-8">
+			<!-- Header -->
+			<div class="mb-8">
+				<h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-2">Catalogo</h1>
+				<p class="text-neutral-600">Scopri tutte le nostre creazioni artigianali</p>
+			</div>
+
+			<div class="flex flex-col lg:flex-row gap-8">
+				<!-- Filters Sidebar -->
+				<aside class="lg:w-64 flex-shrink-0 space-y-6">
+					<!-- Search -->
+					<div class="bg-white border border-neutral-200 rounded-lg p-4">
+						<label for="search" class="block text-sm font-medium mb-2">Cerca</label>
+						<input
+							type="text"
+							id="search"
+							name="search"
+							placeholder="Nome o descrizione..."
+							class="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:border-transparent"
+						/>
+					</div>
+
+					<!-- Category Filter -->
+					<div class="bg-white border border-neutral-200 rounded-lg p-4">
+						<h3 class="font-medium mb-3">Categoria</h3>
+						<div id="category-filter" class="space-y-2">
+							{categories.map((cat) => (
+								<label class="flex items-center space-x-2 cursor-pointer">
+									<input
+										type="radio"
+										name="category"
+										value={cat}
+										checked={cat === 'all'}
+										class="w-4 h-4 text-neutral-900 focus:ring-neutral-900"
+									/>
+									<span class="text-sm capitalize">{cat === 'all' ? 'Tutte' : cat}</span>
+								</label>
+							))}
+						</div>
+					</div>
+
+					<!-- Size Filter -->
+					<div class="bg-white border border-neutral-200 rounded-lg p-4">
+						<h3 class="font-medium mb-3">Taglia</h3>
+						<div id="size-filter" class="space-y-2">
+							{allSizes.map((size) => (
+								<label class="flex items-center space-x-2 cursor-pointer">
+									<input
+										type="radio"
+										name="size"
+										value={size}
+										checked={size === 'all'}
+										class="w-4 h-4 text-neutral-900 focus:ring-neutral-900"
+									/>
+									<span class="text-sm">{size === 'all' ? 'Tutte' : size}</span>
+								</label>
+							))}
+						</div>
+					</div>
+
+					<!-- Availability Filter -->
+					<div class="bg-white border border-neutral-200 rounded-lg p-4">
+						<h3 class="font-medium mb-3">Disponibilità</h3>
+						<label class="flex items-center space-x-2 cursor-pointer">
+							<input
+								type="checkbox"
+								id="in-stock-only"
+								class="w-4 h-4 text-neutral-900 focus:ring-neutral-900 rounded"
+							/>
+							<span class="text-sm">Solo disponibili</span>
+						</label>
+					</div>
+
+					<!-- Reset Filters -->
+					<button
+						id="reset-filters"
+						class="w-full px-4 py-2 border border-neutral-300 text-neutral-700 rounded-md hover:bg-neutral-50 transition-colors text-sm font-medium"
+					>
+						Resetta Filtri
+					</button>
+				</aside>
+
+				<!-- Products Grid -->
+				<div class="flex-1">
+					<!-- Results Count -->
+					<div class="flex items-center justify-between mb-4">
+						<p id="results-count" class="text-sm text-neutral-600">
+							Mostrando {allProducts.length} prodotti
+						</p>
+					</div>
+
+					<!-- Products Container -->
+					<div id="products-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+						{allProducts.map((product) => (
+							<ProductCard product={product} />
+						))}
+					</div>
+
+					<!-- No Results Message -->
+					<div id="no-results" class="hidden text-center py-12">
+						<svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-neutral-400 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<circle cx="11" cy="11" r="8"/>
+							<line x1="21" x2="21.01" y1="21" y2="21"/>
+						</svg>
+						<h3 class="text-lg font-medium text-neutral-900 mb-2">Nessun prodotto trovato</h3>
+						<p class="text-neutral-600">Prova a modificare i filtri di ricerca</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+</Layout>
+
+<script define:vars={{ allProducts }}>
+	// State
+	let currentProducts = [...allProducts];
+	let currentCategory = 'all';
+	let currentSize = 'all';
+	let currentSearch = '';
+	let inStockOnly = false;
+
+	// DOM Elements
+	const productsContainer = document.getElementById('products-container');
+	const resultsCount = document.getElementById('results-count');
+	const noResults = document.getElementById('no-results');
+	const searchInput = document.getElementById('search');
+	const categoryInputs = document.querySelectorAll('input[name="category"]');
+	const sizeInputs = document.querySelectorAll('input[name="size"]');
+	const inStockCheckbox = document.getElementById('in-stock-only') as HTMLInputElement;
+	const resetButton = document.getElementById('reset-filters');
+
+	// Render products
+	function renderProducts(products: typeof allProducts): void {
+		if (!productsContainer) return;
+
+		if (products.length === 0) {
+			productsContainer.innerHTML = '';
+			noResults?.classList.remove('hidden');
+			resultsCount!.textContent = 'Nessun prodotto trovato';
+			return;
+		}
+
+		noResults?.classList.add('hidden');
+		resultsCount!.textContent = `Mostrando ${products.length} prodotto${products.length !== 1 ? 'i' : ''}`;
+
+		productsContainer.innerHTML = products.map((product) => {
+			const formatPrice = (price: number) => {
+				return new Intl.NumberFormat('it-IT', {
+					style: 'currency',
+					currency: 'EUR'
+				}).format(price);
+			};
+
+			return `
+				<article class="group relative bg-white border border-neutral-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+					<a href="/prodotto/${product.id}" class="block">
+						<div class="relative aspect-[4/3] overflow-hidden bg-neutral-100">
+							<img
+								src="${product.images[0] || '/placeholder-product.jpg'}"
+								alt="${product.name}"
+								class="h-full w-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
+								loading="lazy"
+							/>
+							${!product.inStock ? `
+								<div class="absolute inset-0 bg-white/80 flex items-center justify-center">
+									<span class="px-3 py-1 bg-neutral-900 text-white text-sm font-medium rounded">
+										Esaurito
+									</span>
+								</div>
+							` : ''}
+						</div>
+
+						<div class="p-4 space-y-2">
+							<h3 class="font-semibold text-neutral-900 group-hover:text-neutral-600 transition-colors">
+								${product.name}
+							</h3>
+							<div class="flex items-center justify-between">
+								<span class="text-lg font-semibold">${formatPrice(product.price)}</span>
+								${product.inStock ? `
+									<button
+										data-product-id="${product.id}"
+										data-product-name="${product.name}"
+										data-product-price="${product.price}"
+										data-product-image="${product.images[0] || '/placeholder-product.jpg'}"
+										data-product-sizes="${product.sizes[0] || '40'}"
+										class="add-to-cart-btn px-3 py-1.5 bg-neutral-900 text-white text-sm font-medium rounded hover:bg-neutral-800 transition-colors"
+									>
+										Aggiungi
+									</button>
+								` : ''}
+							</div>
+						</div>
+					</a>
+				</article>
+			`;
+		}).join('');
+
+		// Reattach event listeners for add to cart buttons
+		reattachCartListeners();
+	}
+
+	// Filter products
+	function filterProducts(): void {
+		let filtered = [...allProducts];
+
+		// Category filter
+		if (currentCategory !== 'all') {
+			filtered = filtered.filter((p) => p.category.toLowerCase() === currentCategory.toLowerCase());
+		}
+
+		// Size filter
+		if (currentSize !== 'all') {
+			filtered = filtered.filter((p) => p.sizes.includes(currentSize));
+		}
+
+		// Search filter
+		if (currentSearch) {
+			const searchTerm = currentSearch.toLowerCase();
+			filtered = filtered.filter(
+				(p) =>
+					p.name.toLowerCase().includes(searchTerm) ||
+					p.description.toLowerCase().includes(searchTerm)
+			);
+		}
+
+		// Stock filter
+		if (inStockOnly) {
+			filtered = filtered.filter((p) => p.inStock);
+		}
+
+		currentProducts = filtered;
+		renderProducts(filtered);
+	}
+
+	// Reattach cart event listeners
+	function reattachCartListeners(): void {
+		document.querySelectorAll('.add-to-cart-btn').forEach((btn) => {
+			btn.addEventListener('click', (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+
+				const button = e.currentTarget as HTMLElement;
+				const item = {
+					id: button.dataset.productId || '',
+					name: button.dataset.productName || '',
+					price: parseFloat(button.dataset.productPrice || '0'),
+					image: button.dataset.productImage || '',
+					size: button.dataset.productSizes || '40'
+				};
+
+				if ((window as any).addToCart) {
+					(window as any).addToCart(item);
+				}
+			});
+		});
+	}
+
+	// Event Listeners
+	searchInput?.addEventListener('input', (e) => {
+		currentSearch = (e.target as HTMLInputElement).value;
+		filterProducts();
+	});
+
+	categoryInputs.forEach((input) => {
+		input.addEventListener('change', (e) => {
+			currentCategory = (e.target as HTMLInputElement).value;
+			filterProducts();
+		});
+	});
+
+	sizeInputs.forEach((input) => {
+		input.addEventListener('change', (e) => {
+			currentSize = (e.target as HTMLInputElement).value;
+			filterProducts();
+		});
+	});
+
+	inStockCheckbox?.addEventListener('change', (e) => {
+		inStockOnly = (e.target as HTMLInputElement).checked;
+		filterProducts();
+	});
+
+	resetButton?.addEventListener('click', () => {
+		currentCategory = 'all';
+		currentSize = 'all';
+		currentSearch = '';
+		inStockOnly = false;
+
+		if (searchInput) searchInput.value = '';
+		(categoryInputs[0] as HTMLInputElement).checked = true;
+		(sizeInputs[0] as HTMLInputElement).checked = true;
+		if (inStockCheckbox) inStockCheckbox.checked = false;
+
+		filterProducts();
+	});
+</script>
